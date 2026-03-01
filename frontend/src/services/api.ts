@@ -33,6 +33,16 @@ export const pipelineApi = {
   stop: (runId: string) =>
     request<{ status: string }>(`/pipeline/${runId}/stop`, { method: 'POST' }),
   get: (runId: string) => request<PipelineRun>(`/pipeline/${runId}`),
+  assign: (runId: string, taskId: string, devId: string) =>
+    request<{ status: string }>(`/pipeline/${runId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ task_id: taskId, dev_id: devId }),
+    }),
+  setAutoAssign: (runId: string, enabled: boolean) =>
+    request<{ status: string; enabled: boolean }>(`/pipeline/${runId}/auto-assign`, {
+      method: 'POST',
+      body: JSON.stringify({ enabled }),
+    }),
 }
 
 export const developersApi = {
@@ -85,11 +95,34 @@ export const historyApi = {
   get: (runId: string) => request<PipelineRun>(`/runs/${runId}`),
 }
 
+export interface GitHubIssue {
+  number: number
+  title: string
+  body: string
+  labels: string[]
+}
+
 export const projectsApi = {
   load: (source: string, path: string) =>
-    request<{ path: string; summary: string; detected_stack: string[]; file_count: number }>(
-      '/projects/load',
-      { method: 'POST', body: JSON.stringify({ source, path }) },
+    request<{
+      path: string
+      summary: string
+      detected_stack: string[]
+      file_count: number
+      github_owner?: string
+      github_repo?: string
+    }>('/projects/load', { method: 'POST', body: JSON.stringify({ source, path }) }),
+  getFiles: (path: string) =>
+    request<{ files: Record<string, string> }>(
+      `/projects/files?path=${encodeURIComponent(path)}`,
+    ),
+  getWorkspaceFiles: (runId: string) =>
+    request<{ files: Record<string, string> }>(
+      `/projects/workspace-files/${runId}`,
+    ),
+  getIssues: (owner: string, repo: string) =>
+    request<{ issues: GitHubIssue[] }>(
+      `/projects/github-issues?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
     ),
 }
 

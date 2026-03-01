@@ -45,3 +45,32 @@ def write_files(run_id: str, files: dict[str, str]) -> list[str]:
         write_file(run_id, filepath, content)
         written.append(filepath)
     return written
+
+
+def get_workspace_path(run_id: str) -> str:
+    return str(workspace_dir(run_id))
+
+
+IGNORE_DIRS = {
+    "node_modules", "__pycache__", ".venv", "venv", "dist", "build",
+    ".git", ".next", ".cache", ".tox", "egg-info",
+}
+
+
+def copy_project_to_workspace(project_path: str, run_id: str) -> str:
+    """Copy an existing project into the run workspace.
+
+    Skips common non-source directories. Returns workspace path.
+    """
+    import shutil
+
+    src = Path(project_path).expanduser().resolve()
+    ws = workspace_dir(run_id)
+
+    def _ignore(directory: str, contents: list[str]) -> set[str]:
+        return {c for c in contents if c in IGNORE_DIRS or c.startswith(".")}
+
+    if src.is_dir():
+        shutil.copytree(src, ws, ignore=_ignore, dirs_exist_ok=True)
+
+    return str(ws)

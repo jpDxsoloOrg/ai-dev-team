@@ -29,6 +29,7 @@ export interface DeveloperConfig {
   specialty: string
   custom_prompt: string
   enabled: boolean
+  team: string
 }
 
 export interface PipelineTask {
@@ -79,4 +80,6 @@ export interface PipelineStartRequest {
   provider: string
   model: string
   project_path?: string | null
+  team?: string | null
+  auto_assign?: boolean
 }

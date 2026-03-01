@@ -15,6 +15,10 @@ class BaseAgent:
         self.model = model
         self.run_id = run_id
 
+    @property
+    def display_name(self) -> str:
+        return self.role
+
     async def _broadcast(self, event_type: EventType, data: dict) -> None:
         event = PipelineEvent(type=event_type, run_id=self.run_id, data=data)
         await ws_manager.broadcast(event)
@@ -22,7 +26,8 @@ class BaseAgent:
     async def think(self, system_prompt: str, user_message: str) -> str:
         await self._broadcast(
             EventType.AGENT_THINKING,
-            {"agent": self.role, "message": f"{self.role} is thinking..."},
+            {"agent": self.display_name, "role": self.role,
+             "message": f"{self.display_name} is thinking..."},
         )
 
         messages = [
@@ -34,7 +39,7 @@ class BaseAgent:
 
         await self._broadcast(
             EventType.AGENT_OUTPUT,
-            {"agent": self.role, "output": response},
+            {"agent": self.display_name, "role": self.role, "output": response},
         )
 
         return response

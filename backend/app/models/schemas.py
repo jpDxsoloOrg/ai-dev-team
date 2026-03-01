@@ -13,6 +13,7 @@ class DeveloperConfig(BaseModel):
     specialty: str = ""
     custom_prompt: str = ""
     enabled: bool = True
+    team: str = ""
 
 
 class PipelineStartRequest(BaseModel):
@@ -20,6 +21,8 @@ class PipelineStartRequest(BaseModel):
     provider: str
     model: str
     project_path: str | None = None
+    team: str | None = None
+    auto_assign: bool = True
 
 
 class PipelineRunResponse(BaseModel):

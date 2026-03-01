@@ -24,6 +24,7 @@ class PipelineState:
         self.current = orchestrator
         self._task = task
         self.pause_event.set()
+        task.add_done_callback(lambda _: self.clear())
 
     def pause(self) -> None:
         self.pause_event.clear()

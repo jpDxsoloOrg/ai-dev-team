@@ -12,7 +12,7 @@ class OllamaProvider(LLMProvider):
 
     async def generate(self, messages: list[dict], model: str) -> str:
         try:
-            async with httpx.AsyncClient(timeout=300) as client:
+            async with httpx.AsyncClient(timeout=600) as client:
                 resp = await client.post(
                     f"{self.base_url}/api/chat",
                     json={"model": model, "messages": messages, "stream": False},

@@ -3,15 +3,17 @@ import type { DeveloperConfig } from '@/types'
 
 interface AddDevModalProps {
   existing?: DeveloperConfig | null
+  teamNames?: string[]
   onSave: (data: Partial<DeveloperConfig>) => Promise<void>
   onClose: () => void
 }
 
-export function AddDevModal({ existing, onSave, onClose }: AddDevModalProps) {
+export function AddDevModal({ existing, teamNames = [], onSave, onClose }: AddDevModalProps) {
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('\uD83E\uDD16')
   const [color, setColor] = useState('#4a9eff')
   const [specialty, setSpecialty] = useState('')
+  const [team, setTeam] = useState('')
   const [customPrompt, setCustomPrompt] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -21,6 +23,7 @@ export function AddDevModal({ existing, onSave, onClose }: AddDevModalProps) {
       setEmoji(existing.emoji)
       setColor(existing.color)
       setSpecialty(existing.specialty)
+      setTeam(existing.team || '')
       setCustomPrompt(existing.custom_prompt)
     }
   }, [existing])
@@ -29,7 +32,7 @@ export function AddDevModal({ existing, onSave, onClose }: AddDevModalProps) {
     e.preventDefault()
     setSaving(true)
     try {
-      await onSave({ name, emoji, color, specialty, custom_prompt: customPrompt })
+      await onSave({ name, emoji, color, specialty, team, custom_prompt: customPrompt })
       onClose()
     } finally {
       setSaving(false)
@@ -62,6 +65,18 @@ export function AddDevModal({ existing, onSave, onClose }: AddDevModalProps) {
               onChange={(e) => setSpecialty(e.target.value)}
               placeholder="e.g. frontend, backend, testing"
             />
+          </label>
+          <label>
+            Team
+            <input
+              list="team-names"
+              value={team}
+              onChange={(e) => setTeam(e.target.value)}
+              placeholder="e.g. Frontend, Backend, QA"
+            />
+            <datalist id="team-names">
+              {teamNames.map((t) => <option key={t} value={t} />)}
+            </datalist>
           </label>
           <label>
             Custom Prompt

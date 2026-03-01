@@ -46,5 +46,18 @@ async def commit_files(repo_path: str, message: str) -> str:
     return result
 
 
+async def push_branch(repo_path: str, branch_name: str) -> None:
+    await _run(["git", "push", "-u", "origin", branch_name], cwd=repo_path)
+
+
 async def init_repo(path: str) -> None:
     await _run(["git", "init"], cwd=path)
+
+
+async def is_git_repo(path: str) -> bool:
+    """Check if a directory is already a git repository."""
+    try:
+        await _run(["git", "rev-parse", "--git-dir"], cwd=path)
+        return True
+    except RuntimeError:
+        return False

@@ -1,8 +1,7 @@
-import json
 import logging
-import re
 
 from app.agents.base import BaseAgent
+from app.agents.json_utils import parse_json_response
 from app.agents.prompts import REVIEWER_SYSTEM
 from app.ws.events import EventType
 
@@ -29,17 +28,11 @@ class ReviewerAgent(BaseAgent):
         return result
 
     def _parse_review(self, response: str) -> dict:
-        cleaned = re.sub(r"```(?:json)?\s*", "", response).strip()
+        result = parse_json_response(response)
 
-        try:
-            result = json.loads(cleaned)
-        except json.JSONDecodeError:
-            match = re.search(r"\{.*\}", cleaned, re.DOTALL)
-            if match:
-                result = json.loads(match.group())
-            else:
-                logger.error("Failed to parse review response: %s", response[:200])
-                return {"approved": False, "comments": [{"severity": "error", "message": "Could not parse review"}]}
+        if result is None or not isinstance(result, dict):
+            logger.error("Failed to parse review response: %s", response[:300])
+            return {"approved": False, "comments": [{"severity": "error", "message": "Could not parse review"}]}
 
         return {
             "approved": result.get("approved", False),

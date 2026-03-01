@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { useRecentItems } from '@/hooks/useRecentItems'
 
 type ProjectType = 'new' | 'local' | 'github'
 
 interface ProjectLoaderProps {
-  onLoad: (projectPath: string) => void
+  onLoad: (projectPath: string, githubOwner?: string, githubRepo?: string) => void
 }
 
 export function ProjectLoader({ onLoad }: ProjectLoaderProps) {
@@ -11,6 +12,7 @@ export function ProjectLoader({ onLoad }: ProjectLoaderProps) {
   const [path, setPath] = useState('')
   const [loading, setLoading] = useState(false)
   const [info, setInfo] = useState<string | null>(null)
+  const recentProjects = useRecentItems('ai-dev-team:recent-projects')
 
   async function handleLoad() {
     if (!path.trim()) return
@@ -24,7 +26,8 @@ export function ProjectLoader({ onLoad }: ProjectLoaderProps) {
       const data = await res.json()
       if (res.ok) {
         setInfo(`Loaded: ${data.summary || data.path}`)
-        onLoad(data.path)
+        recentProjects.add(path.trim())
+        onLoad(data.path, data.github_owner, data.github_repo)
       } else {
         setInfo(`Error: ${data.detail}`)
       }
@@ -32,6 +35,17 @@ export function ProjectLoader({ onLoad }: ProjectLoaderProps) {
       setInfo('Failed to load project')
     } finally {
       setLoading(false)
+    }
+  }
+
+  function selectRecent(value: string) {
+    if (!value) return
+    setPath(value)
+    // Auto-detect type from the value
+    if (value.startsWith('http') || value.includes('github.com')) {
+      setType('github')
+    } else if (value.startsWith('/')) {
+      setType('local')
     }
   }
 
@@ -53,6 +67,18 @@ export function ProjectLoader({ onLoad }: ProjectLoaderProps) {
       </div>
       {type !== 'new' && (
         <>
+          {recentProjects.items.length > 0 && (
+            <select
+              className="recent-select"
+              value=""
+              onChange={(e) => selectRecent(e.target.value)}
+            >
+              <option value="">Recent projects...</option>
+              {recentProjects.items.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+          )}
           <input
             type="text"
             placeholder={type === 'local' ? '/path/to/project' : 'https://github.com/user/repo'}

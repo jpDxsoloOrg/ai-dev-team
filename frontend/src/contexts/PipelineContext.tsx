@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -19,10 +20,12 @@ interface PipelineContextValue {
   status: PipelineStatus | null
   events: PipelineEvent[]
   connected: boolean
-  start: (goal: string, provider: string, model: string, projectPath?: string) => Promise<void>
+  start: (goal: string, provider: string, model: string, projectPath?: string, team?: string, autoAssign?: boolean) => Promise<void>
   pause: () => Promise<void>
   resume: () => Promise<void>
   stop: () => Promise<void>
+  assignTask: (taskId: string, devId: string) => Promise<void>
+  setAutoAssign: (enabled: boolean) => Promise<void>
   clearEvents: () => void
 }
 
@@ -34,69 +37,83 @@ export function PipelineProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<PipelineTask[]>([])
   const [status, setStatus] = useState<PipelineStatus | null>(null)
 
-  // Process WS events into state (setState is intentional for WS event sync)
+  // Track how many events we've already processed
+  const processedCount = useRef(0)
+
+  // Process ALL new WS events into state (setState is intentional for WS event sync)
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (events.length === 0) return
-    const latest = events[events.length - 1]
+    if (events.length <= processedCount.current) return
 
-    switch (latest.type) {
-      case 'pipeline_status':
-        setStatus(latest.data.status as PipelineStatus)
-        break
-      case 'task_created':
-        setTasks((prev) => [
-          ...prev,
-          {
-            id: latest.data.task_id,
-            run_id: latest.run_id,
-            title: latest.data.title,
-            description: '',
-            status: 'pending' as TaskStatus,
-            assigned_to: null,
-            specialty_tags: latest.data.specialty_tags,
-            code_output: null,
-            review_notes: null,
-            test_results: null,
-            file_paths: null,
-            created_at: latest.timestamp,
-            updated_at: latest.timestamp,
-          },
-        ])
-        break
-      case 'task_assigned':
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.id === latest.data.task_id
-              ? { ...t, assigned_to: latest.data.developer, status: 'assigned' as TaskStatus }
-              : t,
-          ),
-        )
-        break
-      case 'task_updated':
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.id === latest.data.task_id
-              ? { ...t, status: latest.data.status as TaskStatus }
-              : t,
-          ),
-        )
-        break
+    const newEvents = events.slice(processedCount.current)
+    processedCount.current = events.length
+
+    for (const event of newEvents) {
+      switch (event.type) {
+        case 'pipeline_status':
+          setStatus(event.data.status as PipelineStatus)
+          break
+        case 'task_created':
+          setTasks((prev) => {
+            // Avoid duplicates
+            if (prev.some((t) => t.id === event.data.task_id)) return prev
+            return [
+              ...prev,
+              {
+                id: event.data.task_id,
+                run_id: event.run_id,
+                title: event.data.title,
+                description: '',
+                status: 'pending' as TaskStatus,
+                assigned_to: null,
+                specialty_tags: event.data.specialty_tags,
+                code_output: null,
+                review_notes: null,
+                test_results: null,
+                file_paths: null,
+                created_at: event.timestamp,
+                updated_at: event.timestamp,
+              },
+            ]
+          })
+          break
+        case 'task_assigned':
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === event.data.task_id
+                ? { ...t, assigned_to: event.data.developer, status: 'assigned' as TaskStatus }
+                : t,
+            ),
+          )
+          break
+        case 'task_updated':
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === event.data.task_id
+                ? { ...t, status: event.data.status as TaskStatus }
+                : t,
+            ),
+          )
+          break
+      }
     }
   }, [events])
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const start = useCallback(
-    async (goal: string, provider: string, model: string, projectPath?: string) => {
+    async (goal: string, provider: string, model: string, projectPath?: string, team?: string, autoAssign?: boolean) => {
       const newRun = await pipelineApi.start({
         goal,
         provider,
         model,
         project_path: projectPath ?? null,
+        team: team ?? null,
+        auto_assign: autoAssign ?? true,
       })
       setRun(newRun)
       setTasks(newRun.tasks)
       setStatus(newRun.status)
+      processedCount.current = 0
       clearEvents()
     },
     [clearEvents],
@@ -114,6 +131,14 @@ export function PipelineProvider({ children }: { children: ReactNode }) {
     if (run) await pipelineApi.stop(run.id)
   }, [run])
 
+  const assignTask = useCallback(async (taskId: string, devId: string) => {
+    if (run) await pipelineApi.assign(run.id, taskId, devId)
+  }, [run])
+
+  const setAutoAssign = useCallback(async (enabled: boolean) => {
+    if (run) await pipelineApi.setAutoAssign(run.id, enabled)
+  }, [run])
+
   const value = useMemo(
     () => ({
       run,
@@ -125,9 +150,11 @@ export function PipelineProvider({ children }: { children: ReactNode }) {
       pause,
       resume,
       stop: stopPipeline,
+      assignTask,
+      setAutoAssign,
       clearEvents,
     }),
-    [run, tasks, status, events, connected, start, pause, resume, stopPipeline, clearEvents],
+    [run, tasks, status, events, connected, start, pause, resume, stopPipeline, assignTask, setAutoAssign, clearEvents],
   )
 
   return <PipelineContext.Provider value={value}>{children}</PipelineContext.Provider>

@@ -27,8 +27,22 @@ const SettingsContext = createContext<SettingsContextValue | null>(null)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [providers, setProviders] = useState<ProviderInfo[]>([])
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
-  const [selectedModel, setSelectedModel] = useState<string | null>(null)
+  const [selectedProvider, setSelectedProviderRaw] = useState<string | null>(
+    () => localStorage.getItem('ai-dev-team:provider'),
+  )
+  const [selectedModel, setSelectedModelRaw] = useState<string | null>(
+    () => localStorage.getItem('ai-dev-team:model'),
+  )
+
+  const setSelectedProvider = useCallback((name: string) => {
+    setSelectedProviderRaw(name)
+    localStorage.setItem('ai-dev-team:provider', name)
+  }, [])
+
+  const setSelectedModel = useCallback((model: string) => {
+    setSelectedModelRaw(model)
+    localStorage.setItem('ai-dev-team:model', model)
+  }, [])
   const [apiKeyStatus, setApiKeyStatus] = useState<
     Record<string, { configured: boolean; masked: string | null }>
   >({})

@@ -48,7 +48,7 @@ export interface AgentOutputEvent extends BaseEvent {
 
 export interface CodeGeneratedEvent extends BaseEvent {
   type: 'code_generated'
-  data: { agent: string; files: string[] }
+  data: { agent: string; files: string[]; contents?: Record<string, string> }
 }
 
 export interface ReviewResultEvent extends BaseEvent {
