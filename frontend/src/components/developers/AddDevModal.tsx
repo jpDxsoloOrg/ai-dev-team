@@ -14,6 +14,7 @@ export function AddDevModal({ existing, teamNames = [], onSave, onClose }: AddDe
   const [color, setColor] = useState('#4a9eff')
   const [specialty, setSpecialty] = useState('')
   const [team, setTeam] = useState('')
+  const [showNewTeam, setShowNewTeam] = useState(false)
   const [customPrompt, setCustomPrompt] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -23,10 +24,12 @@ export function AddDevModal({ existing, teamNames = [], onSave, onClose }: AddDe
       setEmoji(existing.emoji)
       setColor(existing.color)
       setSpecialty(existing.specialty)
-      setTeam(existing.team || '')
+      const existingTeam = existing.team || ''
+      setTeam(existingTeam)
+      setShowNewTeam(existingTeam !== '' && !teamNames.includes(existingTeam))
       setCustomPrompt(existing.custom_prompt)
     }
-  }, [existing])
+  }, [existing, teamNames])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -68,15 +71,33 @@ export function AddDevModal({ existing, teamNames = [], onSave, onClose }: AddDe
           </label>
           <label>
             Team
-            <input
-              list="team-names"
-              value={team}
-              onChange={(e) => setTeam(e.target.value)}
-              placeholder="e.g. Frontend, Backend, QA"
-            />
-            <datalist id="team-names">
-              {teamNames.map((t) => <option key={t} value={t} />)}
-            </datalist>
+            <select
+              value={showNewTeam ? '__new__' : team}
+              onChange={(e) => {
+                if (e.target.value === '__new__') {
+                  setShowNewTeam(true)
+                  setTeam('')
+                } else {
+                  setShowNewTeam(false)
+                  setTeam(e.target.value)
+                }
+              }}
+            >
+              <option value="">No team</option>
+              {teamNames.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+              <option value="__new__">+ New team...</option>
+            </select>
+            {showNewTeam && (
+              <input
+                value={team}
+                onChange={(e) => setTeam(e.target.value)}
+                placeholder="Enter new team name"
+                autoFocus
+                style={{ marginTop: '0.4rem' }}
+              />
+            )}
           </label>
           <label>
             Custom Prompt

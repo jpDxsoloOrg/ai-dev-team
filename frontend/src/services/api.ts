@@ -126,6 +126,25 @@ export const projectsApi = {
     ),
 }
 
+export const chatApi = {
+  send: (data: {
+    message: string
+    project_path: string | null
+    provider: string
+    model: string
+    history: { role: string; content: string }[]
+  }) =>
+    request<{ reply: string }>('/chat', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  createIssue: (data: { owner: string; repo: string; title: string; body: string }) =>
+    request<{ number: number; url: string }>('/chat/create-issue', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+}
+
 export const exportApi = {
   zipUrl: (runId: string) => `${BASE}/export/${runId}/zip`,
   transcriptUrl: (runId: string) => `${BASE}/export/${runId}/transcript`,

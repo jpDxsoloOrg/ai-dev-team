@@ -13,12 +13,13 @@ import { ApiKeyManager } from '@/components/settings/ApiKeyManager'
 import { ProjectLoader } from '@/components/settings/ProjectLoader'
 import { CodeViewer } from '@/components/code/CodeViewer'
 import { ExportPanel } from '@/components/export/ExportPanel'
+import { ChatBox } from '@/components/chat/ChatBox'
 import { useDevelopers } from '@/hooks/useDevelopers'
 import { projectsApi } from '@/services/api'
 import type { DeveloperConfig } from '@/types'
 import './App.css'
 
-type Tab = 'tasks' | 'code' | 'team' | 'export'
+type Tab = 'tasks' | 'code' | 'chat' | 'team' | 'export'
 
 function TeamSidebarSection() {
   const { developers } = useDevelopers()
@@ -117,7 +118,7 @@ function Dashboard() {
           <ProgressBar />
 
           <div className="tabs" style={{ marginTop: '1rem' }}>
-            {(['tasks', 'code', 'team', 'export'] as Tab[]).map((tab) => (
+            {(['tasks', 'code', 'chat', 'team', 'export'] as Tab[]).map((tab) => (
               <button
                 key={tab}
                 className="tab"
@@ -140,6 +141,9 @@ function Dashboard() {
               files={hasProject ? allFiles : generatedFiles}
               originalFiles={hasProject ? originalFiles : {}}
             />
+          )}
+          {activeTab === 'chat' && (
+            <ChatBox projectPath={projectPath} githubOwner={githubOwner} githubRepo={githubRepo} />
           )}
           {activeTab === 'team' && <DeveloperCards />}
           {activeTab === 'export' && <ExportPanel />}

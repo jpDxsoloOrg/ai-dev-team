@@ -15,6 +15,7 @@ from app.routes.providers import router as providers_router
 from app.routes.export import router as export_router
 from app.routes.projects import router as projects_router
 from app.routes.settings import router as settings_router
+from app.routes.chat import router as chat_router
 from app.ws.manager import ws_manager
 
 
@@ -42,6 +43,7 @@ app.include_router(history_router)
 app.include_router(settings_router)
 app.include_router(projects_router)
 app.include_router(export_router)
+app.include_router(chat_router)
 
 
 @app.get("/api/health")
