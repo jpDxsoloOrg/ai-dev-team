@@ -15,7 +15,7 @@ export function useWebSocket(): UseWebSocketReturn {
   const [events, setEvents] = useState<PipelineEvent[]>([])
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectAttempt = useRef(0)
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>()
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const clearEvents = useCallback(() => setEvents([]), [])
 

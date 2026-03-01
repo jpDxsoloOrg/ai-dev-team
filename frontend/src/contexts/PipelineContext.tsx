@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useCallback,
@@ -33,7 +34,8 @@ export function PipelineProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<PipelineTask[]>([])
   const [status, setStatus] = useState<PipelineStatus | null>(null)
 
-  // Process WS events into state
+  // Process WS events into state (setState is intentional for WS event sync)
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (events.length === 0) return
     const latest = events[events.length - 1]
@@ -82,6 +84,7 @@ export function PipelineProvider({ children }: { children: ReactNode }) {
         break
     }
   }, [events])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const start = useCallback(
     async (goal: string, provider: string, model: string, projectPath?: string) => {

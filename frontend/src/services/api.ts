@@ -84,3 +84,18 @@ export const historyApi = {
     ),
   get: (runId: string) => request<PipelineRun>(`/runs/${runId}`),
 }
+
+export const projectsApi = {
+  load: (source: string, path: string) =>
+    request<{ path: string; summary: string; detected_stack: string[]; file_count: number }>(
+      '/projects/load',
+      { method: 'POST', body: JSON.stringify({ source, path }) },
+    ),
+}
+
+export const exportApi = {
+  zipUrl: (runId: string) => `${BASE}/export/${runId}/zip`,
+  transcriptUrl: (runId: string) => `${BASE}/export/${runId}/transcript`,
+  git: (runId: string) =>
+    request<{ message: string; sha: string }>(`/export/${runId}/git`, { method: 'POST' }),
+}

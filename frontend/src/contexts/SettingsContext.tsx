@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useCallback,
@@ -45,6 +46,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     refreshProviders()
   }, [refreshProviders])
@@ -59,6 +61,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [providers, selectedProvider])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const saveApiKey = useCallback(
     async (provider: string, key: string) => {

@@ -14,6 +14,8 @@ from app.models.pipeline import PipelineRun, PipelineTask
 from app.models.schemas import DeveloperConfig
 from app.pipeline.task_assigner import TaskAssigner
 from app.providers.base import LLMProvider
+from app.pipeline.merge import merge_task_outputs
+from app.services.file_manager import write_files
 from app.ws.events import EventType, PipelineEvent
 from app.ws.manager import ws_manager
 
@@ -278,10 +280,21 @@ class PipelineOrchestrator:
             })
 
     async def _merge(self, session: AsyncSession, approved: dict[str, dict[str, str]]) -> None:
-        all_files: dict[str, str] = {}
-        for files in approved.values():
-            all_files.update(files)
+        merged, conflicts = merge_task_outputs(approved)
+
+        if conflicts:
+            await self._broadcast(EventType.LOG, {
+                "message": f"Conflicts detected in {len(conflicts)} files: {', '.join(conflicts)}",
+            })
+
+        written = write_files(self.run_id, merged)
 
         await self._broadcast(EventType.LOG, {
-            "message": f"Merging {len(all_files)} files from {len(approved)} tasks",
+            "message": f"Merged {len(written)} files from {len(approved)} tasks",
         })
+
+        for filepath in written:
+            await self._broadcast(EventType.CODE_GENERATED, {
+                "agent": "merger",
+                "files": [filepath],
+            })
