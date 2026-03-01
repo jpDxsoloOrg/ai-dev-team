@@ -5,6 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.models.database import init_db
+from app.routes.developers import router as developers_router
+from app.routes.history import router as history_router
+from app.routes.pipeline import router as pipeline_router
+from app.routes.providers import router as providers_router
+from app.routes.settings import router as settings_router
 from app.ws.manager import ws_manager
 
 
@@ -23,6 +28,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.include_router(pipeline_router)
+app.include_router(developers_router)
+app.include_router(providers_router)
+app.include_router(history_router)
+app.include_router(settings_router)
 
 
 @app.get("/api/health")
