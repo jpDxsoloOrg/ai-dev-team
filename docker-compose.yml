@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./pipeline.db
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    profiles:
+      - with-ollama
+
+volumes:
+  ollama_data:
